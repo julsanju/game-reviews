@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import type { Review, ReviewCategory } from "@/data/reviews";
 
-const StarRating = ({ rating }: { rating: number }) => {
+const StarRating = () => {
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -23,10 +24,12 @@ const GameCard = ({ review, rank }: { review: Review; rank?: number }) => {
   return (
     <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
       <div className="relative h-64 overflow-hidden">
-        <img
+        <Image
           src={review.imagen}
           alt={review.titulo}
           className="w-full h-full object-cover"
+          width={400}
+          height={256}
         />
         {rank && (
           <div className="absolute top-4 left-4 w-14 h-14 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
@@ -125,7 +128,7 @@ export default function Home() {
         });
         alert("¡Reseña enviada exitosamente!");
       }
-    } catch (error) {
+    } catch {
       alert("Error al enviar la reseña");
     } finally {
       setSubmitting(false);
@@ -255,7 +258,7 @@ export default function Home() {
                   Filtros activos: {" "}
                   {filter !== "Todos" && <span className="text-indigo-600">Categoría: {filter}</span>}
                   {filter !== "Todos" && searchQuery && " · "}
-                  {searchQuery && <span className="text-indigo-600">Búsqueda: "{searchQuery}"</span>}
+                  {searchQuery && <span className="text-indigo-600">Búsqueda: &ldquo;{searchQuery}&rdquo;</span>}
                 </p>
                 <p className="text-indigo-700 text-sm">
                   Mostrando {filteredReviews.length} {filteredReviews.length === 1 ? 'resultado' : 'resultados'}

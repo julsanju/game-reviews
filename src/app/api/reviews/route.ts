@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Review from '@/models/Review';
-import { reviews as fallbackReviews, categorias as fallbackCategorias } from '@/data/reviews';
+import { reviews as fallbackReviews } from '@/data/reviews';
 import { getImageByCategory } from '@/lib/imagesByCategory';
 import type { Review as ReviewType } from '@/data/reviews';
 
 // Almacenamiento temporal en memoria (se reinicia al reiniciar el servidor)
+// eslint-disable-next-line prefer-const
 let inMemoryReviews: ReviewType[] = [...fallbackReviews];
 let useMongoDB = false;
 
@@ -49,7 +50,7 @@ export async function GET() {
       reviews: formattedReviews,
       categories: categories.sort(),
     });
-  } catch (error) {
+  } catch {
     console.error('❌ MongoDB no disponible, usando almacenamiento en memoria');
     useMongoDB = false;
     
@@ -160,8 +161,8 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error('❌ Error creando reseña:', error);
+  } catch (err) {
+    console.error('❌ Error creando reseña:', err);
     return NextResponse.json(
       { message: 'Error al crear la reseña' },
       { status: 500 }

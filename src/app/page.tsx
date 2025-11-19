@@ -51,7 +51,7 @@ const GameCard = ({ review, rank }: { review: Review; rank?: number }) => {
           {review.resumen}
         </p>
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <StarRating rating={review.puntuacion} />
+          <StarRating />
           <span className="text-2xl font-bold text-indigo-600">
             {review.puntuacion}
           </span>

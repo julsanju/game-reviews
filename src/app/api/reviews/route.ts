@@ -34,7 +34,7 @@ export async function GET() {
 
     // Transformar las reseñas para que coincidan con el formato del frontend
     const formattedReviews = reviews.map((review) => ({
-      id: review._id.toString(),
+      id: String(review._id),
       titulo: review.titulo,
       categoria: review.categoria,
       puntuacion: review.puntuacion,
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
         const categories = await Review.distinct('categoria');
 
         const formattedReview = {
-          id: newReview._id.toString(),
+          id: String(newReview._id),
           titulo: newReview.titulo,
           categoria: newReview.categoria,
           puntuacion: newReview.puntuacion,

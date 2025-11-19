@@ -11,17 +11,20 @@ if (!MONGODB_URI) {
  * in development. This prevents connections growing exponentially
  * during API Route usage.
  */
-declare global {
-  var mongoose: {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
-  };
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
 }
 
-let cached = global.mongoose;
+declare global {
+  var mongoose: MongooseCache | undefined;
+}
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+// eslint-disable-next-line prefer-const
+let cached: MongooseCache = global.mongoose || { conn: null, promise: null };
+
+if (!global.mongoose) {
+  global.mongoose = cached;
 }
 
 async function connectDB() {
@@ -34,9 +37,9 @@ async function connectDB() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
       console.log('✅ Conectado a MongoDB');
-      return mongoose;
+      return mongooseInstance;
     });
   }
 

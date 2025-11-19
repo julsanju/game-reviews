@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "verify": "tsx src/scripts/verify-collections.ts"
   },
   "dependencies": {
     "mongoose": "^8.20.0",

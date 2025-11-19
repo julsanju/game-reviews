@@ -6,9 +6,10 @@ import { getImageByCategory } from '@/lib/imagesByCategory';
 // PUT - Actualizar una reseña
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await props.params;
     await connectDB();
     const body = await request.json();
     const { titulo, categoria, puntuacion, resumen, autor, plataforma, año, imagen } = body;
@@ -84,9 +85,10 @@ export async function PUT(
 // DELETE - Eliminar una reseña
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await props.params;
     await connectDB();
 
     const deletedReview = await Review.findByIdAndDelete(params.id);

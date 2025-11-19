@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const order = searchParams.get('order') === 'desc' ? -1 : 1;
 
     // Construir el filtro
-    const filter: any = {};
+    const filter: { activa?: boolean } = {};
     if (activa !== null && activa !== undefined) {
       filter.activa = activa === 'true';
     }
@@ -52,12 +52,19 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error al crear categoría:', error);
 
     // Manejar errores de validación de Mongoose
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err: any) => err.message);
+    if (
+      error &&
+      typeof error === 'object' &&
+      'name' in error &&
+      error.name === 'ValidationError' &&
+      'errors' in error
+    ) {
+      const mongooseError = error as { errors: Record<string, { message: string }> };
+      const messages = Object.values(mongooseError.errors).map((err) => err.message);
       return NextResponse.json(
         {
           success: false,
@@ -69,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Manejar error de duplicado (nombre único)
-    if (error.code === 11000) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
       return NextResponse.json(
         {
           success: false,

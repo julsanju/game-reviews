@@ -89,11 +89,18 @@ export async function PUT(
       success: true,
       data: user,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error al actualizar usuario:', error);
 
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err: any) => err.message);
+    if (
+      error &&
+      typeof error === 'object' &&
+      'name' in error &&
+      error.name === 'ValidationError' &&
+      'errors' in error
+    ) {
+      const mongooseError = error as { errors: Record<string, { message: string }> };
+      const messages = Object.values(mongooseError.errors).map((err) => err.message);
       return NextResponse.json(
         {
           success: false,

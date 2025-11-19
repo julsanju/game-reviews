@@ -20,7 +20,7 @@ const StarRating = () => {
   );
 };
 
-const GameCard = ({ review, rank }: { review: Review; rank?: number }) => {
+const GameCard = ({ review, rank, onEdit, onDelete }: { review: Review; rank?: number; onEdit?: (review: Review) => void; onDelete?: (id: string) => void }) => {
   return (
     <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
       <div className="relative h-64 overflow-hidden">
@@ -41,6 +41,37 @@ const GameCard = ({ review, rank }: { review: Review; rank?: number }) => {
             {review.categoria}
           </span>
         </div>
+        {/* Botones de acción */}
+        {(onEdit || onDelete) && (
+          <div className="absolute bottom-4 right-4 flex gap-2">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(review)}
+                className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg transition-colors"
+                title="Editar reseña"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => {
+                  if (confirm('¿Estás seguro de que quieres eliminar esta reseña?')) {
+                    onDelete(review.id);
+                  }
+                }}
+                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-colors"
+                title="Eliminar reseña"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
       </div>
       <div className="p-5 flex flex-col flex-grow">
         <h3 className="text-xl font-bold text-gray-900 mb-1">
@@ -83,6 +114,8 @@ export default function Home() {
     puntuacion: 9.5,
     resena: "",
   });
+  const [editingReview, setEditingReview] = useState<Review | null>(null);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
 
   useEffect(() => {
     fetch("/api/reviews")
@@ -132,6 +165,61 @@ export default function Home() {
       alert("Error al enviar la reseña");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleEditClick = (review: Review) => {
+    setEditingReview(review);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReview) return;
+
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`/api/reviews/${editingReview.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: editingReview.titulo,
+          categoria: editingReview.categoria,
+          puntuacion: editingReview.puntuacion,
+          resumen: editingReview.resumen,
+          autor: editingReview.autor,
+          plataforma: editingReview.plataforma,
+          año: editingReview.año,
+        }),
+      });
+
+      if (res.ok) {
+        const { review } = await res.json();
+        setReviews((prev) => prev.map((r) => (r.id === review.id ? review : r)));
+        setShowEditModal(false);
+        setEditingReview(null);
+        alert("¡Reseña actualizada exitosamente!");
+      }
+    } catch {
+      alert("Error al actualizar la reseña");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    try {
+      const res = await fetch(`/api/reviews/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setReviews((prev) => prev.filter((r) => r.id !== id));
+        alert("Reseña eliminada exitosamente");
+      }
+    } catch {
+      alert("Error al eliminar la reseña");
     }
   };
 
@@ -237,9 +325,14 @@ export default function Home() {
             ) : latestReviews.length === 0 ? (
               <p className="text-gray-600 col-span-full text-center">No hay reseñas disponibles</p>
             ) : (
-              latestReviews.map((review) => (
-                <GameCard key={review.id} review={review} />
-              ))
+            latestReviews.map((review) => (
+              <GameCard 
+                key={review.id} 
+                review={review} 
+                onEdit={handleEditClick}
+                onDelete={handleDeleteReview}
+              />
+            ))
             )}
           </div>
         </section>
@@ -367,7 +460,12 @@ export default function Home() {
             </div>
           ) : (
             filteredReviews.map((review) => (
-              <GameCard key={review.id} review={review} />
+              <GameCard 
+                key={review.id} 
+                review={review} 
+                onEdit={handleEditClick}
+                onDelete={handleDeleteReview}
+              />
             ))
           )}
         </div>
@@ -387,7 +485,13 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {topRated.map((review, index) => (
-              <GameCard key={review.id} review={review} rank={index + 1} />
+              <GameCard 
+                key={review.id} 
+                review={review} 
+                rank={index + 1}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteReview}
+              />
             ))}
           </div>
         </section>
@@ -506,6 +610,134 @@ export default function Home() {
           </form>
         </div>
       </section>
+
+      {/* Modal de Edición */}
+      {showEditModal && editingReview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-bold text-gray-900">Editar Reseña</h2>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingReview(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateReview} className="space-y-6">
+              {/* Juego */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Juego
+                </label>
+                <input
+                  type="text"
+                  value={editingReview.titulo}
+                  onChange={(e) => setEditingReview({ ...editingReview, titulo: e.target.value })}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-gray-900 transition-colors"
+                />
+              </div>
+
+              {/* Categoría */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Categoría
+                </label>
+                <select
+                  value={editingReview.categoria}
+                  onChange={(e) => setEditingReview({ ...editingReview, categoria: e.target.value })}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-gray-900 transition-colors appearance-none bg-white cursor-pointer"
+                >
+                  <option value="">Selecciona una categoría</option>
+                  <option value="Acción">Acción</option>
+                  <option value="RPG">RPG</option>
+                  <option value="Estrategia">Estrategia</option>
+                  <option value="Aventura">Aventura</option>
+                  <option value="Terror">Terror</option>
+                  <option value="Racing">Racing</option>
+                  <option value="Deportes">Deportes</option>
+                  <option value="Puzzle">Puzzle</option>
+                  <option value="Indie">Indie</option>
+                </select>
+              </div>
+
+              {/* Puntuación */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Puntuación (1-10)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="0.1"
+                  value={editingReview.puntuacion}
+                  onChange={(e) => setEditingReview({ ...editingReview, puntuacion: parseFloat(e.target.value) })}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-gray-900 transition-colors"
+                />
+              </div>
+
+              {/* Reseña */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Reseña
+                </label>
+                <textarea
+                  value={editingReview.resumen}
+                  onChange={(e) => setEditingReview({ ...editingReview, resumen: e.target.value })}
+                  required
+                  rows={5}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-gray-900 transition-colors resize-none"
+                />
+              </div>
+
+              {/* Autor */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Autor
+                </label>
+                <input
+                  type="text"
+                  value={editingReview.autor}
+                  onChange={(e) => setEditingReview({ ...editingReview, autor: e.target.value })}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-gray-900 transition-colors"
+                />
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingReview(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? "Guardando..." : "Guardar Cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8 mt-16">
